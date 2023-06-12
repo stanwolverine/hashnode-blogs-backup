@@ -1,0 +1,441 @@
+---
+title: "Rust Testing for Developers: A Straightforward Guide 🧪"
+seoTitle: "Rust Testing for Developers: A Straightforward Guide"
+seoDescription: "Learn the essentials of Rust testing with this concise guide: learn writing, running, organizing tests, using assertion utilities, and integration tests"
+datePublished: Mon Jun 12 2023 05:33:20 GMT+0000 (Coordinated Universal Time)
+cuid: clisf4tp2000m09mfcme93b1g
+slug: rust-testing-for-developers-a-straightforward-guide
+cover: https://cdn.hashnode.com/res/hashnode/image/upload/v1686547149695/73fe108c-bf9a-40ba-a2e0-ea224ff3f109.jpeg
+tags: unit-testing, developer, testing, guide, rust
+
+---
+
+## Introduction
+
+In this guide, we will learn what tests are and how to write and run them in Rust. This article is designed to be simple, straightforward, and to the point. It includes code snippets with comments to demonstrate how each concept appears in actual code. Please note that these code snippets may not compile.
+
+Before we proceed, it's assumed that you have a basic understanding of testing principles and Rust, including its module system. Therefore, I won't be providing explanations of these concepts throughout the article.
+
+## What is a Test in Rust
+
+A function annotated with a `test` attribute is a Test in Rust, It can also be called a Test Function.
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1686507908655/249ba4ca-6f18-4e06-a4ca-30fc50cf9a79.png align="center")
+
+This `test` attribute (`#[test]`) indicates that the following function is a Test Function, not a normal function.
+
+## How to make a Test Fail or Pass
+
+* **Test "fails" when the Test Function "panics"**
+    
+    We can call `panic!` macro explicitly or other code within our test function can invoke the `panic!` macro to mark a test as *"failed"*
+    
+    ```rust
+    // Example 2: Making a Test Fail
+    
+    #[test]
+    fn should_add_two() {
+      // To make a Test fail:-
+    
+      // `panic` macro can be
+      //   called explicitly
+      panic!();
+    
+      // OR, other code or expression
+      //   can also call `panic` macro
+      // function_which_calls_panic()
+    }
+    ```
+    
+* **Test "passes" when the Test Function finishes execution without any panics**.
+    
+
+## Run your Tests
+
+We can run `cargo test` command to run our tests. It will run all the test functions and show the result of the tests.
+
+```bash
+cargo test
+```
+
+To run specific tests, We can provide the "name" or a "part of the name" of the test(s) to the `cargo test` command. Cargo will then run all the tests whose names contain the given text.
+
+```bash
+cargo test <Test_Name_Here>
+```
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1685804517682/35692e3d-4024-4ddb-a9b2-19b308e6ae63.png align="center")
+
+## Where to Write Tests
+
+The simplest way to organize our tests is by putting them in the same file with the code they test. When we follow this approach, Rust will compile the tests along with the regular code when we run `cargo build` or `cargo run`, which is not desirable.
+
+To solve this, We create a module named "tests" in the same file to contain all the tests.
+
+```rust
+// ... Regular Code Here ...
+
+// In same file after regular code,
+// Create module named "tests"
+mod tests {
+  // All of our tests will
+  //   be written inside module
+}
+```
+
+then, Add `#[cfg(test)]` attribute to the "tests" module, this attribute tells Rust to compile and run this module code only when we run the `cargo test` command.
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1686507998529/7101b6f3-555b-4800-9e80-6f8cd76896b2.png align="center")
+
+Now, when we write tests, we will notice that code outside of the tests module is not in scope and we are unable to use it. To use outside code, We have to bring it into the scope of the current module. We do this by using `use super::*` statement.
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1686508074423/7eba45a0-ab71-4ccc-812e-e71fb999d363.png align="center")
+
+Below code snippet shows an example of tests written with the regular code -
+
+```rust
+fn make_double(num: i32) -> i32 {
+  return num * 2;
+}
+
+#[cfg(test)]
+mod tests {
+  // This brings `make_double`
+  //   function into scope
+  use super::*;
+
+  #[test]
+  fn should_make_double() {
+    if make_double(4) != 8 {
+      panic!();
+    }
+  }
+}
+```
+
+To understand the above code snippet more, see the image below -
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1685789482745/54fb31cb-1ecd-40e4-bd33-64266942a4f5.png align="center")
+
+## Assertion Utilities
+
+1. `assert!` macro  
+    The `assert!` macro takes an expression as a first parameter and checks if that expression evaluates to `true`.
+    
+    If the given expression doesn't evaluate to `true`, `assert!` macro will invoke `panic!` macro for us and the test will be marked as failed.
+    
+    ```rust
+    // Example 3: `assert!` macro usage
+    
+    #[test]
+    fn passed_test() {
+      let a = 1; let b = 3;
+    
+      // expression "a + b == 4"
+      //   evaluates to `true`.
+      // Thus, `assert!` macro will
+      //   not invoke `panic!` macro
+      assert!(a + b == 4);
+    }
+    
+    #[test]
+    fn failed_test() {
+      let a = 2; let b = 2;
+    
+      // expression "a + b == 5"
+      //   evaluates to `false`.
+      // Thus, `assert!` macro will
+      //   invoke `panic!` macro and
+      //   test will be marked as "failed"
+      assert!(a + b == 5);
+    }
+    ```
+    
+2. `assert_eq!` macro  
+    The `assert_eq!` macro checks if the two expressions are equal to each other using double equal comparison (`==` operator).
+    
+    If the two expressions are not equal, `assert_eq!` macro will invoke `panic!` macro for us and the test will be marked as failed.
+    
+    ```rust
+    // Example 4: `assert_eq!` macro usage
+    
+    #[test]
+    fn pass_test() {
+      let a = 1; let b = 3;
+    
+      // left expression `a + b` is equal(==)
+      //   to right expression `4`
+      // Thus, `assert_eq!` macro
+      //   will not invoke `panic!` macro
+      assert_eq!(a + b, 4);
+    }
+    
+    #[test]
+    fn fail_test() {
+      let a = 2; let b = 2;
+    
+      // left expression `a + b` is not equal(==)
+      //   to right expression `5`
+      // Thus, `assert_eq!` macro
+      //   will invoke `panic!` macro
+      assert_eq!(a + b, 5);
+    }
+    ```
+    
+3. `assert_ne!` macro  
+    The `assert_ne!` macro is the opposite of `assert_eq!` macro.
+    
+    Instead of checking for equality, It checks if the two expressions are *not equal* to each other using a "not equal" comparison (`!=` operator).
+    
+    If the two expressions are equal, `assert_ne!` macro will invoke `panic!` macro and the test will be marked as failed.
+    
+    ```rust
+    // Example 5: `assert_ne!` macro usage
+    
+    #[test]
+    fn fail_test() {
+      let a = 1; let b = 3;
+    
+      // left expression `a + b` is equal
+      //   to right expression `4`
+      // Thus, `assert_ne!` macro will
+      //   invoke `panic!` macro
+      assert_ne!(a + b, 4);
+    }
+    
+    #[test]
+    fn pass_test() {
+      let a = 2; let b = 2;
+    
+      // left expression `a + b` is "not equal"
+      //   to right expression `5`
+      // Thus, `assert_eq!` macro will
+      //   not invoke `panic!` macro
+      assert_ne!(a + b, 5);
+    }
+    ```
+    
+4. `should_panic` attribute  
+    The `should_panic` attribute allows us to verify whether the code inside the test function triggers the `panic!` macro when expected, enabling us to test the occurrence of panics.
+    
+    When the code inside the test function invokes `panic!` macro, our test is not marked as failed, the `should_panic` attribute marks the test as "passed" because panic was expected.
+    
+    To add the `should_panic` attribute to a function, we can simply place it on a new line after the `test` attribute. Refer to below code snippet -
+    
+    ```rust
+    // Example 6: `should_panic` attribute usage
+    
+    #[test]
+    #[should_panic]
+    fn passed_test() {
+      let a = 1; let b = 3;
+    
+      // expression `a + b != 4`
+      //   evaluates to `false`
+      // Therfore, `assert!` macro
+      //   will invoke `panic!` macro
+      assert!(a + b != 4);
+    
+      // This test will be marked
+      //   as "passed" because
+      // panic is "expected" and also "triggered"
+    }
+    
+    #[test]
+    #[should_panic]
+    fn failed_test() {
+      let a = 2; let b = 2;
+    
+      // expression `a + b == 4`
+      //   evaluates to `true`
+      // Therfore, `assert!` macro will
+      //   not invoke `panic!` macro
+      assert!(a + b == 4);
+    
+      // This test will be marked
+      //    as "failed" because
+      // `should_panic` attribute is present,
+      //    indicating that a panic is expected
+      // However, in this test, the
+      //    panic was not "triggered".
+    }
+    ```
+    
+    In Rust, panic can be triggered for various reasons. With `should_panic` attribute, we can also check if a panic was triggered for a specific reason.
+    
+    If the panic happens as expected for that reason, the test will pass. However, the test will be marked as failed if the panic occurs for a different reason or doesn't happen at all.
+    
+    Refer to below code snippet for example -
+    
+    ```rust
+    // Example 7: `should_panic` attribute usage with specific reason
+    
+    #[test]
+    #[should_panic(expected = "a is not equal to b")]
+    fn passed_test() {
+      let a = 1; let b = 2;
+      if a != b {
+        panic!("a is not equal to b");
+      }
+      // This test will be marked
+      //    as "passed" because
+      // "panic was triggered for
+      //    the expected reason"
+    }
+    
+    #[test]
+    #[should_panic(expected = "your custom message")]
+    fn failed_test() {
+      let a = 1; let b = 2;
+      if a != b {
+        panic!("a is not equal to 2");
+      }
+      // This test will be marked
+      //    as "failed" because
+      // panic was triggered for a
+      //    different reason
+      // than the expected reason specified
+    }
+    ```
+    
+
+The `assert!`, `assert_eq!` and `assert_ne!` macros also allow us to provide custom error messages. When these macros invoke `panic!` macro, they pass along the custom message we provided. This helps us to provide descriptive error messages when a test fails.
+
+After providing the required parameters to the `assert!`, `assert_eq!`, and `assert_ne!` macros, we can pass a custom error message. Any additional arguments provided after the custom message will be passed to the *placeholders*("{}") present in the error message *string*, allowing us to create more detailed and dynamic error messages.
+
+Refer to below code snippet for usage examples -
+
+```rust
+// Example 8: Passing custom error
+//   message to assertion macros
+
+#[test]
+fn assert_with_error_msg() {
+  let a = 10; let b = 20;
+
+  assert!(
+    a == b, // expression to evaluate
+    "{a} is not equal to {b}" // custom message
+  );
+}
+
+#[test]
+fn assert_eq_with_error_msg() {
+  let a = 10; let b = 20;
+
+  assert_eq!(
+    a, // left expression
+    b, // right expression
+    "`{}` left is not equal to `{}` right", // custom message
+    a, // value to pass to first placeholder
+    b // value to pass to second placeholder
+  );
+}
+
+#[test]
+fn assert_ne_with_error_msg() {
+  let a = 10; let b = 10;
+
+  assert_ne!(
+    a, // left expression
+    b, // right expression
+    "{a} and {b} are equal" // custom message
+  );
+}
+```
+
+## Organizing Integration Tests
+
+In the "Where to Write Tests" section, we discussed where to put our tests. However, that applies only to unit tests and not Integration tests.
+
+In Rust, Integration tests are for testing "library crates" and not binary crates, using our library crate as any other external code would. This means in integration tests, we can only use public functions of our library crate.
+
+To write Integration tests -
+
+1. We first need to create a "tests" directory at the root of the crate next to the "src" directory.
+    
+2. In this directory, we can create as many test files as we want, Rust knows to look for integration tests in files inside the "tests" directory.
+    
+    [![](https://cdn.hashnode.com/res/hashnode/image/upload/v1686077504417/0db02418-8ebb-4e73-988e-af0fad35d3e6.png?auto=compress,format&format=webp align="center")](https://cdn.hashnode.com/res/hashnode/image/upload/v1686077504417/0db02418-8ebb-4e73-988e-af0fad35d3e6.png?auto=compress,format&format=webp)
+    
+3. Then we need to bring our library crate into the scope of each test file using  
+    `use <library_crate_name>::*` statement at the top of the file because each file will be a separate crate.
+    
+    ![](https://cdn.hashnode.com/res/hashnode/image/upload/v1686509089314/7238e1a9-1a25-4666-a1ae-4eaf47fcf0bb.png align="center")
+    
+
+## Bonus 🎁
+
+* By default, If a test passes, `println!` statement used inside it, will not print anything to the console. However, we can change this behaviour with `--nocapture` flag.
+    
+    ```bash
+    # Example of `--nocapture` flag usage
+    
+    cargo test -- --nocapture
+    ```
+    
+* We can also use `Result<T, E>` struct instead of triggering a panic.  
+    Instead of using `assert!`, `assert_eq!`, `assert_ne!` macros or calling `panic!` macro explicitly, we can return `Result::Err` variant when we want the test to fail or `Result::OK` variant when we want the test to pass.
+    
+    ```rust
+    // Example 9: Usage of Result Struct in tests
+    
+    #[test]
+    fn result_struct_example() -> Result<(), String> {
+      let a = 4;
+    
+      if a * 3 != 10 {
+        // Instead of triggering panic
+        // We return `Result::Err` variant
+        // to make test fail
+        return Err(String::from(
+            "three times of 4 is not equal to 10"
+        ));
+      }
+    
+      // We return `Result::OK` variant
+      // When we want test to pass
+      return Ok(());
+    }
+    ```
+    
+
+## Summary
+
+* Annotate functions with `#[test]` attribute to make them test functions.
+    
+* "Triggering a panic in the test function" or "returning a `Result::Err` variant from the test function" will make the test fail.
+    
+* Use `cargo test` command to run tests, additionally, we can pass the name of the test - `cargo test <name_of_test_here>`
+    
+* We can put our unit tests in the same file as the regular code.
+    
+* We put unit tests in a module annotated with `#[cfg(test)]` attribute. Inside the module, we use `use super::*` statement to bring the parent module code into the current module's scope.
+    
+* We can use `assert!`, `assert_eq!` and `assert_ne!` macros, instead of triggering panic ourselves.
+    
+* We can use `should_panic!` macro when we expect panic to be triggered in a test.
+    
+* Integration tests are written in a separate directory named "tests" at the root level of our project. Since Integration tests are separate from the library code, we need to bring the library into scope explicitly.
+    
+
+## Before We End...
+
+Thank you for reading! I hope you learned something from this guide.
+
+If you want to dive deeper into testing in Rust, I recommend checking out the [official Rust book](https://doc.rust-lang.org/book/ch11-00-testing.html).
+
+If you found this guide helpful, please share and like it to help more people discover it.
+
+### Let's Connect
+
+Don't miss out on future articles like this one! Follow me on the socials listed below and Hashnode to stay updated.
+
+* [Twitter](https://twitter.com/stanwolverine)
+    
+* [LinkedIn](https://linkedin.com/in/jatin-nagar)
+    
+* [Github](https://github.com/stanwolverine)
+    
+
+The upcoming article could be about "Strings in Rust," so you won't want to miss it!
